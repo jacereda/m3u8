@@ -12,6 +12,7 @@ package m3u8
 import (
 	"bytes"
 	"errors"
+	"math"
 	"strconv"
 )
 
@@ -50,9 +51,9 @@ func (p *FixedPlaylist) Buffer() *bytes.Buffer {
 	buf.WriteRune('\n')
 	buf.WriteString("#EXT-X-ALLOW-CACHE:YES\n")
 	buf.WriteString("#EXT-X-TARGETDURATION:")
-	buf.WriteString(strconv.FormatFloat(p.TargetDuration, 'f', 2, 64))
+	buf.WriteString(strconv.FormatInt(int64(math.Ceil(p.TargetDuration)), 10))
 	buf.WriteRune('\n')
-	buf.WriteString("#EXT-X-MEDIA-SEQUENCE:1\n")
+	buf.WriteString("#EXT-X-MEDIA-SEQUENCE:0\n")
 
 	for _, s := range p.Segments {
 		if s.Key != nil {
@@ -141,7 +142,7 @@ func (p *SlidingPlaylist) AddSegment(segment Segment) error {
 		return errors.New("segments channel is full")
 	}
 	p.Segments <- segment
-	if segment.Key.Method != "" { // due section 7
+	if segment.Key != nil && segment.Key.Method != "" { // due section 7
 		version(&p.ver, 5)
 	}
 	if p.TargetDuration < segment.Duration {
