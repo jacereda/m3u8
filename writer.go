@@ -12,13 +12,14 @@ package m3u8
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"math"
 	"strconv"
 )
 
 func version(ver *uint8, newver uint8) {
 	if *ver < newver {
-		ver = &newver
+		*ver = newver
 	}
 }
 
@@ -35,6 +36,9 @@ func NewFixedPlaylist() *FixedPlaylist {
 
 func (p *FixedPlaylist) AddSegment(segment Segment) {
 	p.Segments = append(p.Segments, segment)
+	if segment.Offset != 0 {
+		version(&p.ver, 4)
+	}
 	if segment.Key != nil { // due section 7
 		version(&p.ver, 5)
 	}
@@ -69,8 +73,11 @@ func (p *FixedPlaylist) Buffer() *bytes.Buffer {
 			buf.WriteRune('\n')
 		}
 		buf.WriteString("#EXTINF:")
-		buf.WriteString(strconv.FormatFloat(s.Duration, 'f', 2, 32))
-		buf.WriteString("\n")
+		buf.WriteString(strconv.FormatFloat(s.Duration, 'f', 3, 64))
+		buf.WriteString(",\n")
+		if s.Size != 0 {
+			buf.WriteString(fmt.Sprintf("#EXT-X-BYTERANGE:%v@%v\n", s.Size, s.Offset))
+		}
 		buf.WriteString(s.URI)
 		if p.SID != "" {
 			buf.WriteRune('?')
@@ -208,7 +215,7 @@ func (p *SlidingPlaylist) Buffer() *bytes.Buffer {
 			}
 			buf.WriteString("#EXTINF:")
 			buf.WriteString(strconv.FormatFloat(seg.Duration, 'f', 2, 32))
-			buf.WriteString("\n")
+			buf.WriteString(",\n")
 			buf.WriteString(seg.URI)
 			if p.SID != "" {
 				buf.WriteRune('?')

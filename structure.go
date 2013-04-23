@@ -31,7 +31,7 @@ const (
 	minver = uint8(3)
 )
 
-// Simple playlist with fixed duration and with all segments 
+// Simple playlist with fixed duration and with all segments
 // referenced from the single playlist file.
 type FixedPlaylist struct {
 	TargetDuration float64
@@ -93,6 +93,8 @@ type Segment struct {
 	SeqId    uint64
 	URI      string
 	Duration float64
+	Offset   int64
+	Size     int64
 	Key      *Key
 	WV       *WV
 }
