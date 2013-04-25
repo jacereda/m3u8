@@ -38,6 +38,7 @@ type FixedPlaylist struct {
 	Segments       []Segment
 	SID            string
 	ver            uint8
+	iframes        bool
 }
 
 type VariantPlaylist struct {

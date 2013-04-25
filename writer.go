@@ -34,6 +34,12 @@ func NewFixedPlaylist() *FixedPlaylist {
 	return p
 }
 
+func NewFixedIFramesPlaylist() *FixedPlaylist {
+	p := NewFixedPlaylist()
+	p.iframes = true
+	return p
+}
+
 func (p *FixedPlaylist) AddSegment(segment Segment) {
 	p.Segments = append(p.Segments, segment)
 	if segment.Offset != 0 {
@@ -50,14 +56,19 @@ func (p *FixedPlaylist) AddSegment(segment Segment) {
 func (p *FixedPlaylist) Buffer() *bytes.Buffer {
 	var buf bytes.Buffer
 
-	buf.WriteString("#EXTM3U\n#EXT-X-VERSION:")
-	buf.WriteString(strver(p.ver))
-	buf.WriteRune('\n')
-	buf.WriteString("#EXT-X-ALLOW-CACHE:YES\n")
+	buf.WriteString("#EXTM3U\n")
 	buf.WriteString("#EXT-X-TARGETDURATION:")
 	buf.WriteString(strconv.FormatInt(int64(math.Ceil(p.TargetDuration)), 10))
 	buf.WriteRune('\n')
+	buf.WriteString("#EXT-X-VERSION:")
+	buf.WriteString(strver(p.ver))
+	buf.WriteRune('\n')
+	//buf.WriteString("#EXT-X-ALLOW-CACHE:YES\n")
 	buf.WriteString("#EXT-X-MEDIA-SEQUENCE:0\n")
+	buf.WriteString("#EXT-X-PLAYLIST-TYPE:VOD\n")
+	if p.iframes {
+		buf.WriteString("#EXT-X-I-FRAMES-ONLY\n")
+	}
 
 	for _, s := range p.Segments {
 		if s.Key != nil {
@@ -74,7 +85,7 @@ func (p *FixedPlaylist) Buffer() *bytes.Buffer {
 		}
 		buf.WriteString("#EXTINF:")
 		buf.WriteString(strconv.FormatFloat(s.Duration, 'f', 3, 64))
-		buf.WriteString(",\n")
+		buf.WriteString(",\t\n")
 		if s.Size != 0 {
 			buf.WriteString(fmt.Sprintf("#EXT-X-BYTERANGE:%v@%v\n", s.Size, s.Offset))
 		}
@@ -214,8 +225,8 @@ func (p *SlidingPlaylist) Buffer() *bytes.Buffer {
 				}
 			}
 			buf.WriteString("#EXTINF:")
-			buf.WriteString(strconv.FormatFloat(seg.Duration, 'f', 2, 32))
-			buf.WriteString(",\n")
+			buf.WriteString(strconv.FormatFloat(seg.Duration, 'f', 3, 64))
+			buf.WriteString(",\t\n")
 			buf.WriteString(seg.URI)
 			if p.SID != "" {
 				buf.WriteRune('?')
